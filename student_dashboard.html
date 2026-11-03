@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ring %}
+{% block title %}{{ me.name.title() }} · PerformIQ{% endblock %}
+{% block content %}
+{% if staff_view %}<p class="no-print"><a href="{{ url_for('results') }}">← Back to results</a></p>{% endif %}
+<div class="hero">
+  <div style="z-index:1">
+    <div class="eyebrow" style="color:#f5d0fe">{{ 'Student profile' if staff_view else 'Welcome back' }}</div>
+    <h1>{{ me.name.title() }}</h1>
+    <p>Roll No {{ me.roll_no }} · Section {{ me.section }}</p>
+    <p style="margin-top:14px"><a class="btn" href="{{ url_for('report', roll_no=me.roll_no) }}">🖨 Report card</a></p>
+  </div>
+  <div class="rank"><small>Class rank</small>{{ me.rank or '-' }}<span style="font-size:22px;opacity:.8"> / {{ a.evaluated }}</span></div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <h2>Your scores</h2>
+    <div class="rings">
+      {{ ring(me.percentage, 'Overall marks', '#6366f1') }}
+      {{ ring(me.att_pct, 'Attendance', '#10b981' if me.att_pct is none or me.att_pct >= cfg.MIN_ATTENDANCE else '#f59e0b') }}
+      {% set total_subj = me.subjects|length %}
+      {% set passed_subj = me.subjects|selectattr('result', 'equalto', 'Pass')|list|length %}
+      {{ ring(passed_subj, 'Subjects passed (of ' ~ total_subj ~ ')', '#a855f7', '', (passed_subj / total_subj * 100) if total_subj else 0) }}
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:18px;flex-wrap:wrap">
+      <span class="badge g" style="font-size:14px;padding:6px 16px">Grade {{ me.grade }}</span>
+      <span class="badge {{ 'pass' if me.result == 'Pass' else 'fail' if me.result == 'Fail' }}" style="font-size:14px;padding:6px 16px">{{ me.result }}</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>💡 Smart insights</h2>
+    {% for t in tips %}<div class="tip {{ t.type }}"><span class="e">{{ t.icon }}</span><div>{{ t.text }}</div></div>{% endfor %}
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h2>You vs class average <small>% per subject</small></h2><div class="canvas-box"><div id="radarChart" style="width:100%"></div></div></div>
+  <div class="card"><h2>Attendance by subject <small>% (limit {{ cfg.MIN_ATTENDANCE }})</small></h2><div class="canvas-box"><div id="attChart" style="width:100%"></div></div></div>
+</div>
+
+<div class="card">
+  <h2>Marks</h2>
+  <div class="scroll"><table>
+    <tr><th>Subject</th><th>Internal</th><th>External</th><th>Total</th><th>%</th><th>Grade</th><th>Result</th></tr>
+    {% for s in me.subjects %}
+    <tr><td><b>{{ s.subject_code }}</b> · {{ s.subject_name }}</td><td>{{ s.internal }}</td><td>{{ s.external }}</td>
+      <td>{{ s.total }}/{{ s.max_total }}</td><td class="{{ 'fail-text' if s.result == 'Fail' }}">{{ s.percentage }}</td>
+      <td><span class="badge g">{{ s.grade }}</span></td>
+      <td><span class="badge {{ 'pass' if s.result == 'Pass' else 'fail' }}">{{ s.result }}</span></td></tr>
+    {% else %}
+    <tr><td colspan="7" class="muted">Marks are not entered yet.</td></tr>
+    {% endfor %}
+    {% if me.subjects %}
+    <tr class="total-row"><td>Total</td><td></td><td></td><td>{{ me.total }}/{{ me.max_total }}</td><td>{{ me.percentage }}</td><td>{{ me.grade }}</td><td>{{ me.result }}</td></tr>
+    {% endif %}
+  </table></div>
+</div>
+
+<div class="card">
+  <h2>Attendance</h2>
+  <div class="scroll"><table>
+    <tr><th>Subject</th><th>Classes held</th><th>Attended</th><th>%</th></tr>
+    {% for s in me.attendance %}
+    <tr {% if s.percentage < cfg.MIN_ATTENDANCE %}class="row-alert"{% endif %}><td><b>{{ s.subject_code }}</b> · {{ s.subject_name }}</td>
+      <td>{{ s.held }}</td><td>{{ s.attended }}</td><td class="{{ 'fail-text' if s.percentage < cfg.MIN_ATTENDANCE }}">{{ s.percentage }}</td></tr>
+    {% else %}
+    <tr><td colspan="4" class="muted">Attendance is not entered yet.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  var radar = {{ radar|tojson }};
+  var att = {{ me.attendance|tojson }};
+  var limit = {{ cfg.MIN_ATTENDANCE }};
+  if (radar.labels.length > 2) {
+    Charts.radar('radarChart', radar.labels, [
+      { label: 'You', data: radar.me, color: '#6366f1' },
+      { label: 'Class average', data: radar.avg, color: '#10b981' }]);
+  } else {
+    Charts.bar('radarChart', { labels: radar.labels, max: 100, suffix: '%', datasets: [
+      { label: 'You', color: '#6366f1', data: radar.me },
+      { label: 'Class average', color: '#10b981', data: radar.avg }] });
+  }
+  Charts.bar('attChart', { labels: att.map(function (s) { return s.subject_code; }), max: 100, suffix: '%',
+    limit: limit, limitLabel: 'minimum ' + limit + '%',
+    datasets: [{ label: 'Attendance', data: att.map(function (s) { return s.percentage; }),
+      colors: att.map(function (s) { return s.percentage < limit ? '#f59e0b' : '#10b981'; }) }] });
+</script>
+{% endblock %}

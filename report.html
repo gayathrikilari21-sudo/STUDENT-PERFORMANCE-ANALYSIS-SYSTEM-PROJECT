@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Report Card · {{ me.roll_no }}{% endblock %}
+{% block content %}
+<div class="page-head no-print">
+  <div><div class="eyebrow">Document</div><h1>Report Card</h1></div>
+  <button class="btn primary" onclick="window.print()">🖨 Print / Save as PDF</button>
+</div>
+<div class="card report">
+  <div class="report-head">
+    <h2>MOHAN BABU UNIVERSITY</h2>
+    <div>Department of Computer Science and AIML</div>
+    <h3>STUDENT PERFORMANCE REPORT</h3>
+  </div>
+  <div class="meta">
+    <div><b>Name:</b> {{ me.name }}<br><b>Roll No:</b> {{ me.roll_no }}</div>
+    <div><b>Section:</b> {{ me.section }}<br><b>Class rank:</b> {{ me.rank or '-' }} of {{ a.evaluated }}</div>
+  </div>
+  <h3>Marks</h3>
+  <table>
+    <tr><th>Code</th><th>Subject</th><th>Internal</th><th>External</th><th>Total</th><th>Grade</th><th>Result</th></tr>
+    {% for s in me.subjects %}
+    <tr><td>{{ s.subject_code }}</td><td>{{ s.subject_name }}</td><td>{{ s.internal }}</td><td>{{ s.external }}</td>
+      <td>{{ s.total }}/{{ s.max_total }}</td><td>{{ s.grade }}</td><td>{{ s.result }}</td></tr>
+    {% endfor %}
+    <tr class="total-row"><td colspan="4">Grand total</td><td>{{ me.total }}/{{ me.max_total }}</td><td>{{ me.grade }}</td><td>{{ me.result }}</td></tr>
+  </table>
+  <p><b>Overall percentage:</b> {{ me.percentage if me.percentage is not none else '-' }}%</p>
+  <h3>Attendance</h3>
+  <table>
+    <tr><th>Code</th><th>Subject</th><th>Held</th><th>Attended</th><th>%</th></tr>
+    {% for s in me.attendance %}
+    <tr><td>{{ s.subject_code }}</td><td>{{ s.subject_name }}</td><td>{{ s.held }}</td><td>{{ s.attended }}</td><td>{{ s.percentage }}</td></tr>
+    {% endfor %}
+  </table>
+  <p><b>Overall attendance:</b> {{ me.att_pct if me.att_pct is not none else '-' }}%</p>
+  {% if me.alerts %}<h3>Remarks</h3><ul>{% for al in me.alerts %}<li>{{ al }}</li>{% endfor %}</ul>{% endif %}
+  <div class="sign"><div>Class Teacher</div><div>Head of Department</div></div>
+</div>
+{% endblock %}

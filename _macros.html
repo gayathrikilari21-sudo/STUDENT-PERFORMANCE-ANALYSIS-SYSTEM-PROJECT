@@ -1,0 +1,12 @@
+{% macro ring(value, label, color, suffix='%', fill=none) %}
+{% set v = fill if fill is not none else (value if value is not none else 0) %}
+{% set v = 100 if v > 100 else v %}
+<div class="ring">
+  <div class="wrap">
+    <svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="52"/>
+      <circle class="fg" cx="60" cy="60" r="52" style="stroke:{{ color }};--off:{{ (326.7 * (1 - v / 100))|round(1) }}"/></svg>
+    <span class="val">{% if value is not none %}{{ value }}{{ suffix }}{% else %}-{% endif %}</span>
+  </div>
+  <div class="lbl">{{ label }}</div>
+</div>
+{% endmacro %}

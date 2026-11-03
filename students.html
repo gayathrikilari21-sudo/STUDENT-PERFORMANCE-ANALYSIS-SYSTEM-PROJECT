@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Students · PerformIQ{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Administration</div><h1>Manage Students</h1>
+  <p class="muted">A login is created automatically: username = roll number, password = <code>{{ cfg.DEFAULT_STUDENT_PASSWORD }}</code>.</p></div></div>
+<form method="post" class="card form-row">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Roll No <input name="roll_no" required placeholder="25102A0000"></label>
+  <label>Full name <input name="name" required></label>
+  <label>Section <input name="section" required value="A7" size="4" style="width:80px"></label>
+  <label>E-mail (optional) <input type="email" name="email"></label>
+  <button class="btn primary" type="submit">➕ Add student</button>
+</form>
+<div class="card">
+  <div class="toolbar"><div class="search"><input type="search" data-filter="#stuTable" placeholder="Search students…"></div>
+    <span class="muted">{{ students|length }} student(s)</span></div>
+  <div class="scroll"><table id="stuTable" data-sortable>
+    <thead><tr><th>Roll No</th><th>Name</th><th>Section</th><th>E-mail</th><th></th></tr></thead>
+    <tbody>
+    {% for s in students %}
+    <tr><td>{{ s.roll_no }}</td><td>{{ s.name }}</td><td>{{ s.section }}</td><td>{{ s.email or '-' }}</td>
+      <td><form method="post" action="{{ url_for('delete_student', roll_no=s.roll_no) }}" data-msg="Delete {{ s.roll_no }} and all marks and attendance?" onsubmit="return confirm(this.dataset.msg)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn danger small" type="submit">Delete</button></form></td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endblock %}

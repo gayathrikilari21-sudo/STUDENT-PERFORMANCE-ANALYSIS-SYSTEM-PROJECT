@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Staff users · PerformIQ{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Administration</div><h1>Staff Users</h1></div></div>
+<form method="post" class="card form-row">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Username <input name="username" required></label>
+  <label>Full name <input name="full_name" required></label>
+  <label>Password <input type="password" name="password" required minlength="6"></label>
+  <button class="btn primary" type="submit">➕ Add faculty</button>
+</form>
+<div class="card scroll">
+  <table>
+    <tr><th>Username</th><th>Name</th><th>Role</th><th></th></tr>
+    {% for u in staff %}
+    <tr><td>{{ u.username }}</td><td>{{ u.full_name }}</td><td><span class="badge g">{{ u.role }}</span></td>
+      <td>{% if u.role == 'Faculty' %}
+        <form method="post" action="{{ url_for('delete_faculty', user_id=u.user_id) }}" data-msg="Delete this faculty user?" onsubmit="return confirm(this.dataset.msg)">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn danger small" type="submit">Delete</button></form>{% endif %}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

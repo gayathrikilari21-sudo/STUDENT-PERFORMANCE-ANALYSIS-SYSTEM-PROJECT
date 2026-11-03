@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Results · PerformIQ{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow">Class</div><h1>Results &amp; Ranking</h1>
+    <p class="muted">Click a column heading to sort. Click a name for the full student view.</p></div>
+  <a class="btn" href="{{ url_for('results_csv') }}">⬇ Download CSV</a>
+</div>
+<div class="card">
+  <div class="toolbar"><div class="search"><input type="search" data-filter="#resTable" placeholder="Search name or roll number…"></div></div>
+  <div class="scroll">
+  <table id="resTable" data-sortable>
+    <thead><tr><th>Rank</th><th>Roll No</th><th>Name</th>
+      {% for s in a.subjects %}<th title="{{ s.subject_name }}">{{ s.subject_code }}</th>{% endfor %}
+      <th>Total</th><th>%</th><th>Grade</th><th>Result</th><th>Attend.</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      {% set by = {} %}{% for sr in r.subjects %}{% if by.update({sr.subject_code: sr}) %}{% endif %}{% endfor %}
+      <tr {% if r.alerts %}class="row-alert"{% endif %}>
+        <td><b>{{ r.rank or '-' }}</b></td><td>{{ r.roll_no }}</td>
+        <td><a href="{{ url_for('staff_view_student', roll_no=r.roll_no) }}">{{ r.name.title() }}</a></td>
+        {% for s in a.subjects %}{% set sr = by.get(s.subject_code) %}
+          <td class="{{ 'fail-text' if sr and sr.result == 'Fail' }}">{{ sr.total if sr else '-' }}</td>{% endfor %}
+        <td>{{ r.total }}/{{ r.max_total }}</td>
+        <td>{{ r.percentage if r.percentage is not none else '-' }}</td>
+        <td><span class="badge g">{{ r.grade }}</span></td>
+        <td><span class="badge {{ 'pass' if r.result == 'Pass' else 'fail' if r.result == 'Fail' }}">{{ r.result }}</span></td>
+        <td class="{{ 'fail-text' if r.att_pct is not none and r.att_pct < cfg.MIN_ATTENDANCE }}">{{ (r.att_pct ~ '%') if r.att_pct is not none else '-' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <p class="muted" style="margin:12px 0 0">Pass mark: {{ cfg.MIN_PERCENTAGE }}% in every subject · Red = below the limit.</p>
+</div>
+{% endblock %}

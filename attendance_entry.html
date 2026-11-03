@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Attendance · PerformIQ{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Data entry</div><h1>Enter Attendance</h1>
+  <p class="muted">Enter the classes held once, then the classes each student attended.</p></div></div>
+{% if not subjects %}
+  <div class="card">No subjects yet. Ask the Admin to add subjects first.</div>
+{% else %}
+<div class="card">
+  <form method="get" class="form-row">
+    <label>Subject
+      <select name="subject" onchange="this.form.submit()">
+        {% for s in subjects %}<option value="{{ s.subject_code }}" {{ 'selected' if subject and s.subject_code == subject.subject_code }}>{{ s.subject_code }} · {{ s.subject_name }}</option>{% endfor %}
+      </select></label>
+  </form>
+</div>
+{% if subject %}
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="subject" value="{{ subject.subject_code }}">
+  <div class="form-row" style="margin-bottom:16px">
+    <label>Total classes held <input type="number" min="1" name="classes_held" value="{{ held_default }}" required></label>
+  </div>
+  <div class="scroll"><table>
+    <tr><th>Roll No</th><th>Name</th><th>Classes attended</th><th>Attendance</th></tr>
+    {% for s in students %}
+    <tr data-held="1">
+      <td>{{ s.roll_no }}</td><td>{{ s.name.title() }}</td>
+      <td><input type="number" min="0" name="attended_{{ s.roll_no }}" value="{{ existing[s.roll_no].classes_attended if s.roll_no in existing }}"></td>
+      <td><span class="live"></span></td>
+    </tr>
+    {% endfor %}
+  </table></div>
+  <p style="margin:16px 0 0"><button type="submit" class="btn primary">💾 Save attendance</button></p>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

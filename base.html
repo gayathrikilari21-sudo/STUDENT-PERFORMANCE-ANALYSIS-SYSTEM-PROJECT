@@ -1,0 +1,70 @@
+{% set ep = request.endpoint %}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Student Performance Analysis System{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</head>
+<body>
+<div class="toasts no-print">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}<div class="toast {{ category }}">{{ message }}</div>{% endfor %}
+  {% endwith %}
+</div>
+
+{% if user %}
+<div class="shell">
+  <aside class="sidebar no-print" id="sidebar">
+    <div class="logo"><div class="logo-mark">📊</div><div><b>PerformIQ</b><small>Student Analysis</small></div></div>
+    {% if user.role == 'Student' %}
+      <div class="nav-label">My space</div>
+      <a class="nav {{ 'active' if ep == 'student_dashboard' }}" href="{{ url_for('student_dashboard') }}"><i>🏠</i>My Performance</a>
+      <a class="nav {{ 'active' if ep == 'report' }}" href="{{ url_for('report', roll_no=user.roll_no) }}"><i>🧾</i>Report Card</a>
+    {% else %}
+      <div class="nav-label">Analysis</div>
+      <a class="nav {{ 'active' if ep == 'staff_dashboard' }}" href="{{ url_for('staff_dashboard') }}"><i>📊</i>Dashboard</a>
+      <a class="nav {{ 'active' if ep in ('results', 'staff_view_student', 'report') }}" href="{{ url_for('results') }}"><i>🏆</i>Results</a>
+      <a class="nav {{ 'active' if ep == 'alerts' }}" href="{{ url_for('alerts') }}"><i>⚠️</i>Alerts</a>
+      <div class="nav-label">Data entry</div>
+      <a class="nav {{ 'active' if ep == 'marks_entry' }}" href="{{ url_for('marks_entry') }}"><i>✍️</i>Enter Marks</a>
+      <a class="nav {{ 'active' if ep == 'attendance_entry' }}" href="{{ url_for('attendance_entry') }}"><i>🗓️</i>Attendance</a>
+      {% if user.role == 'Admin' %}
+      <div class="nav-label">Administration</div>
+      <a class="nav {{ 'active' if ep == 'manage_students' }}" href="{{ url_for('manage_students') }}"><i>🎓</i>Students</a>
+      <a class="nav {{ 'active' if ep == 'manage_subjects' }}" href="{{ url_for('manage_subjects') }}"><i>📚</i>Subjects</a>
+      <a class="nav {{ 'active' if ep == 'manage_faculty' }}" href="{{ url_for('manage_faculty') }}"><i>👥</i>Staff users</a>
+      {% endif %}
+    {% endif %}
+    <div class="nav-label">Account</div>
+    <a class="nav {{ 'active' if ep == 'account' }}" href="{{ url_for('account') }}"><i>🔐</i>Change password</a>
+    <a class="nav" href="{{ url_for('logout') }}"><i>🚪</i>Logout</a>
+    <div class="side-foot">Mohan Babu University<br>Dept. of CSE &amp; AIML · Team 7</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar no-print">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+      <div class="spacer"></div>
+      <button class="icon-btn" id="themeBtn" aria-label="Toggle theme">🌙</button>
+      <div class="chip"><div class="avatar">{{ user.full_name[:1]|upper }}</div>
+        <div class="nm">{{ user.full_name }}<small>{{ user.role }}</small></div></div>
+    </header>
+    <div class="content">
+{% endif %}
+
+{% block content %}{% endblock %}
+
+{% if user %}
+    </div>
+    <footer class="footer no-print">Mohan Babu University · Department of Computer Science and AIML · Team 7</footer>
+  </div>
+</div>
+{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

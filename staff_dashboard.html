@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · PerformIQ{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow">Overview</div><h1>Class Dashboard</h1>
+    <p class="muted">Live analysis of marks and attendance, recalculated every time data changes.</p></div>
+  <a class="btn" href="{{ url_for('results_csv') }}">⬇ Download results (CSV)</a>
+</div>
+
+<div class="stats">
+  <div class="stat" style="--accent:var(--p1)"><div class="ico">🎓</div><div><div class="num" data-count="{{ a.students|length }}">0</div><div class="lbl">Students</div></div></div>
+  <div class="stat" style="--accent:var(--green)"><div class="ico">✅</div><div><div class="num"><span data-count="{{ a.pass_percentage }}">0</span>%</div><div class="lbl">Pass percentage</div></div></div>
+  <div class="stat" style="--accent:var(--blue)"><div class="ico">📈</div><div><div class="num"><span data-count="{{ a.class_average }}">0</span>%</div><div class="lbl">Class average</div></div></div>
+  <div class="stat" style="--accent:var(--rose)"><div class="ico">⚠️</div><div><div class="num" data-count="{{ a.alerts|length }}">0</div><div class="lbl">Students need attention</div></div></div>
+</div>
+
+<div class="grid g2">
+  <div class="card">
+    <h2>🏆 Top performers</h2>
+    {% if a.toppers %}
+    <div class="podium">
+      {% set order = [1, 0, 2] %}
+      {% for i in order %}{% if a.toppers|length > i %}{% set t = a.toppers[i] %}
+      <div class="pod p{{ i + 1 }}">
+        <div class="who">{{ t.name.title() }}<small>{{ t.percentage }}% · {{ t.grade }}</small></div>
+        <div class="bar">{{ ['🥇','🥈','🥉'][i] }}</div>
+      </div>
+      {% endif %}{% endfor %}
+    </div>
+    {% else %}<p class="muted">No marks entered yet.</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2>💡 Quick insights</h2>
+    {% if a.hardest %}
+      <div class="tip bad"><span class="e">🧗</span><div>Hardest subject: <b>{{ a.hardest.subject_name }}</b> (class average {{ a.hardest.average_pct }}%)</div></div>
+      <div class="tip good"><span class="e">🌟</span><div>Best performed: <b>{{ a.easiest.subject_name }}</b> (class average {{ a.easiest.average_pct }}%)</div></div>
+    {% endif %}
+    <div class="tip"><span class="e">📋</span><div>{{ a.passed }} of {{ a.evaluated }} students passed every subject.</div></div>
+    <div class="tip {{ 'warn' if a.alerts else 'good' }}"><span class="e">{{ '🔔' if a.alerts else '🎉' }}</span><div>{% if a.alerts %}{{ a.alerts|length }} student(s) have low marks or low attendance. See the Alerts page.{% else %}No alerts. Everyone is within the limits.{% endif %}</div></div>
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h2>Subject-wise marks <small>average / highest / lowest</small></h2><div class="canvas-box"><div id="subjChart" style="width:100%"></div></div></div>
+  <div class="card"><h2>Pass vs Fail</h2><div class="canvas-box"><div id="passChart" style="width:100%"></div></div></div>
+  <div class="card"><h2>Grade distribution</h2><div class="canvas-box"><div id="gradeChart" style="width:100%"></div></div></div>
+  <div class="card"><h2>Attendance vs marks <small>each dot is a student</small></h2><div class="canvas-box"><div id="scatterChart" style="width:100%"></div></div></div>
+</div>
+
+<div class="card">
+  <h2>🔥 Performance heatmap <small>subject percentage per student</small></h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Student</th>{% for s in a.subjects %}<th title="{{ s.subject_name }}">{{ s.subject_code }}</th>{% endfor %}<th>Overall</th></tr></thead>
+    <tbody>
+    {% for r in a.students %}
+      {% set by = {} %}{% for sr in r.subjects %}{% if by.update({sr.subject_code: sr}) %}{% endif %}{% endfor %}
+      <tr><td><a href="{{ url_for('staff_view_student', roll_no=r.roll_no) }}">{{ r.name.title() }}</a></td>
+      {% for s in a.subjects %}{% set sr = by.get(s.subject_code) %}
+        {% if sr %}{% set p = sr.percentage %}<td class="hm hm-{{ 'a' if p >= 80 else 'b' if p >= 60 else 'c' if p >= 40 else 'd' }}">{{ p|round|int }}</td>
+        {% else %}<td class="hm hm-n">-</td>{% endif %}
+      {% endfor %}
+      <td class="hm hm-{{ 'n' if r.percentage is none else 'a' if r.percentage >= 80 else 'b' if r.percentage >= 60 else 'c' if r.percentage >= 40 else 'd' }}">{{ r.percentage|round|int if r.percentage is not none else '-' }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  <div class="legend"><span class="a">80+ excellent</span><span class="b">60-79 good</span><span class="c">40-59 average</span><span class="d">below 40 fail</span></div>
+</div>
+
+<div class="card">
+  <h2>⚠️ Students needing attention</h2>
+  {% if a.alerts %}
+  <div class="scroll"><table>
+    <tr><th>Roll No</th><th>Name</th><th>Marks %</th><th>Attendance %</th><th>Reason</th></tr>
+    {% for s in a.alerts %}
+    <tr class="row-alert"><td>{{ s.roll_no }}</td>
+      <td><a href="{{ url_for('staff_view_student', roll_no=s.roll_no) }}">{{ s.name.title() }}</a></td>
+      <td>{{ s.percentage if s.percentage is not none else '-' }}</td><td>{{ s.att_pct if s.att_pct is not none else '-' }}</td>
+      <td>{{ s.alerts|join(' · ') }}</td></tr>
+    {% endfor %}
+  </table></div>
+  {% else %}<p class="muted">🎉 All students are within the limits.</p>{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  var stats = {{ a.subject_stats|tojson }};
+  var gradeLabels = {{ a.grade_labels|tojson }};
+  var gradeCounts = {{ a.grade_counts|tojson }};
+  var scatter = {{ a.scatter|tojson }};
+  Charts.bar('subjChart', {
+    labels: stats.map(function (s) { return s.subject_code; }),
+    datasets: [
+      { label: 'Average', color: '#6366f1', data: stats.map(function (s) { return s.average; }) },
+      { label: 'Highest', color: '#10b981', data: stats.map(function (s) { return s.highest; }) },
+      { label: 'Lowest', color: '#f59e0b', data: stats.map(function (s) { return s.lowest; }) }],
+    max: 100 });
+  Charts.doughnut('passChart', [
+    { label: 'Pass', value: {{ a.passed }}, color: '#10b981' },
+    { label: 'Fail', value: {{ a.failed }}, color: '#f43f5e' }], '{{ a.pass_percentage }}%', 'passed');
+  var gcol = ['#10b981', '#34d399', '#3b82f6', '#6366f1', '#a855f7', '#f59e0b', '#f43f5e'];
+  var gmax = Math.max(4, Math.max.apply(null, gradeCounts));
+  Charts.bar('gradeChart', { labels: gradeLabels, max: gmax, ticks: gmax > 8 ? 5 : gmax, suffix: ' student(s)',
+    datasets: [{ label: 'Students', colors: gcol, data: gradeCounts }] });
+  Charts.scatter('scatterChart', scatter, 'Attendance %', 'Marks %');
+</script>
+{% endblock %}

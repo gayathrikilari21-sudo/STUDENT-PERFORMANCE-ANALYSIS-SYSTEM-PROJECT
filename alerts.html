@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Alerts · PerformIQ{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><div class="eyebrow">Early warning</div><h1>Alerts</h1>
+    <p class="muted">Listed when overall marks are below {{ cfg.MIN_PERCENTAGE }}%, any subject is failed, or attendance is below {{ cfg.MIN_ATTENDANCE }}%.</p></div>
+  <form method="post" action="{{ url_for('send_alerts') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn primary" type="submit">✉ Send alert e-mails</button>
+  </form>
+</div>
+<div class="card">
+  {% if a.alerts %}
+  <div class="scroll"><table>
+    <tr><th>Roll No</th><th>Name</th><th>Marks %</th><th>Attendance %</th><th>Reasons</th></tr>
+    {% for s in a.alerts %}
+    <tr class="row-alert"><td>{{ s.roll_no }}</td>
+      <td><a href="{{ url_for('staff_view_student', roll_no=s.roll_no) }}">{{ s.name.title() }}</a></td>
+      <td>{{ s.percentage if s.percentage is not none else '-' }}</td>
+      <td>{{ s.att_pct if s.att_pct is not none else '-' }}</td>
+      <td>{{ s.alerts|join(' · ') }}</td></tr>
+    {% endfor %}
+  </table></div>
+  {% else %}<p class="muted" style="font-size:16px">🎉 No alerts. All students are within the limits.</p>{% endif %}
+  <p class="muted" style="margin:14px 0 0">E-mails are sent only when <code>SMTP_ENABLED = True</code> in <code>config.py</code> and the student has an e-mail saved.</p>
+</div>
+{% endblock %}

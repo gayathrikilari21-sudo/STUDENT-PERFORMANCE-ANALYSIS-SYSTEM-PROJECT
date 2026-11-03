@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Subjects · PerformIQ{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="eyebrow">Administration</div><h1>Manage Subjects</h1></div></div>
+<form method="post" class="card form-row">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Code <input name="subject_code" required placeholder="CS305" style="width:110px"></label>
+  <label>Subject name <input name="subject_name" required></label>
+  <label>Faculty <input name="faculty_name" required></label>
+  <label>Max internal <input type="number" name="max_internal" value="40" min="1" style="width:100px"></label>
+  <label>Max external <input type="number" name="max_external" value="60" min="1" style="width:100px"></label>
+  <button class="btn primary" type="submit">➕ Add subject</button>
+</form>
+<div class="card scroll">
+  <table>
+    <tr><th>Code</th><th>Subject</th><th>Faculty</th><th>Internal</th><th>External</th><th></th></tr>
+    {% for s in subjects %}
+    <tr><td><b>{{ s.subject_code }}</b></td><td>{{ s.subject_name }}</td><td>{{ s.faculty_name }}</td>
+      <td>{{ s.max_internal }}</td><td>{{ s.max_external }}</td>
+      <td><form method="post" action="{{ url_for('delete_subject', code=s.subject_code) }}" data-msg="Delete {{ s.subject_code }} and its marks and attendance?" onsubmit="return confirm(this.dataset.msg)">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn danger small" type="submit">Delete</button></form></td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
